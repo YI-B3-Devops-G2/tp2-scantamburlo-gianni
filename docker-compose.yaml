@@ -1,0 +1,59 @@
+# DEVELOPPEMENT
+version: '3.1'
+
+services:
+  nginx:
+    build:
+      context: ./docker-nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - nodeapi
+    container_name: reverseproxy
+    hostname: reverseproxy
+    networks:
+      - network-nodejs
+    volumes:
+      - ./docker-nginx:/etc/nginx/conf.d
+    ports:
+      - 7000:80
+
+  nodeapi:
+    build:
+      context: ./
+      dockerfile: docker-node/Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    container_name: nodeapi
+    hostname: nodeapi
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./:/home/node/app
+    networks:
+      - network-db
+      - network-nodejs
+
+  postgres:
+    image: postgres:alpine
+    depends_on:
+      - redis
+    container_name: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: database
+      PGDATA: /tmp
+    networks:
+      - network-db
+
+  redis:
+    image: redis:alpine3.11
+    container_name: redis
+    networks:
+      - network-db
+
+networks:
+  network-db:
+  network-nodejs:
